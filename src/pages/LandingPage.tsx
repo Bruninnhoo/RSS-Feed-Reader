@@ -12,7 +12,7 @@ export function LandingPage() {
           Frontpage
         </div>
         <nav className="flex gap-4">
-          <button className="px-4 py-2 font-medium text-gray-600 hover:text-gray-900">Log in</button>
+          <Link to="/login" className="px-4 py-2 font-medium text-gray-600 hover:text-gray-900">Log in</Link>
           <Link to="/app" className="px-4 py-2 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700">
             Try as Guest
           </Link>
@@ -27,9 +27,9 @@ export function LandingPage() {
           Pull your favorite RSS and Atom feeds into a single, well-designed reading dashboard. The calm way to keep up.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button className="px-6 py-3 rounded-lg font-medium text-lg text-white bg-gray-900 hover:bg-gray-800 transition">
+          <Link to="/signup" className="px-6 py-3 rounded-lg font-medium text-lg text-white bg-gray-900 hover:bg-gray-800 transition">
             Start Reading
-          </button>
+          </Link>
           <Link to="/app" className="px-6 py-3 rounded-lg font-medium text-lg text-gray-900 bg-gray-100 hover:bg-gray-200 transition flex items-center justify-center gap-2">
             Try as Guest <ArrowRight size={20} />
           </Link>
