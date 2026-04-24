@@ -2,19 +2,28 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { Rss, AlertCircle } from "lucide-react";
+import { ConfirmEmail } from "../components/layout/ConfirmEmail";
 
 export function Signup() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const [confirmPassword, setConfirmPassword] = useState("")
     const [error, setError] = useState<string | null>(null);
+    const [emailSent, setEmailSent] = useState(false);
     const navigate = useNavigate();
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
-        
+
+        if (password !== confirmPassword) {
+            setError("Passwords do not match");
+            setLoading(false);
+            return;
+        }
+
         try {
             const { error: signUpError } = await supabase.auth.signUp({
                 email,
@@ -22,15 +31,23 @@ export function Signup() {
             });
 
             if (signUpError) throw signUpError;
-            
-            // On success, redirect to dashboard
-            navigate("/app");
+
+            // On success, show the confirmation screen
+            setEmailSent(true);
         } catch (err: any) {
             setError(err.message || "Failed to sign up");
         } finally {
             setLoading(false);
         }
     };
+
+    if (emailSent) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+                <ConfirmEmail email={email} />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -76,6 +93,19 @@ export function Signup() {
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
+                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
+                            <div className="mt-1">
+                                <input
+                                    type="password"
+                                    required
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
                                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 />
                             </div>
