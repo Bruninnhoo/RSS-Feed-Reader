@@ -1,7 +1,17 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Rss, ArrowRight } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
 export function LandingPage() {
+  const { signInAsGuest } = useAuth();
+  const navigate = useNavigate();
+
+  const handleGuestClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    signInAsGuest();
+    navigate("/app");
+  };
+
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col">
       <header className="px-6 py-4 flex items-center justify-between mx-auto w-full max-w-7xl">
@@ -13,9 +23,9 @@ export function LandingPage() {
         </div>
         <nav className="flex gap-4">
           <Link to="/login" className="px-4 py-2 font-medium text-gray-600 hover:text-gray-900">Log in</Link>
-          <Link to="/app" className="px-4 py-2 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700">
+          <a href="#" onClick={handleGuestClick} className="px-4 py-2 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700">
             Try as Guest
-          </Link>
+          </a>
         </nav>
       </header>
       
@@ -30,9 +40,9 @@ export function LandingPage() {
           <Link to="/signup" className="px-6 py-3 rounded-lg font-medium text-lg text-white bg-gray-900 hover:bg-gray-800 transition">
             Start Reading
           </Link>
-          <Link to="/app" className="px-6 py-3 rounded-lg font-medium text-lg text-gray-900 bg-gray-100 hover:bg-gray-200 transition flex items-center justify-center gap-2">
+          <a href="#" onClick={handleGuestClick} className="px-6 py-3 rounded-lg font-medium text-lg text-gray-900 bg-gray-100 hover:bg-gray-200 transition flex items-center justify-center gap-2">
             Try as Guest <ArrowRight size={20} />
-          </Link>
+          </a>
         </div>
       </main>
     </div>

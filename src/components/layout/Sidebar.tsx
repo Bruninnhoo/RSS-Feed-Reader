@@ -1,6 +1,9 @@
-import { Bookmark, LayoutGrid, Plus, Rss } from "lucide-react";
+import { Bookmark, LayoutGrid, Plus, Rss, Hash } from "lucide-react";
+import { useFeed } from "../../contexts/FeedContext";
 
 export function Sidebar() {
+  const { categories, loadingFeeds } = useFeed();
+
   return (
     <aside className="w-[var(--spacing-sidebar)] h-screen border-r border-[#e1e4e8] bg-[#f8f9fa] flex flex-col p-4 flex-shrink-0">
       <div className="flex items-center gap-2 font-bold text-xl mb-8">
@@ -30,6 +33,28 @@ export function Sidebar() {
             </li>
           </ul>
         </div>
+
+        {categories.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              Categories
+            </h3>
+            {categories.map((category) => (
+              <div key={category.name} className="mb-3">
+                <button className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+                  <Hash size={16} className="text-gray-400" />
+                  {category.name} ({category.feeds.length})
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {loadingFeeds && (
+          <div className="text-sm p-4 text-gray-500 flex justify-center w-full">
+            Loading your feeds...
+          </div>
+        )}
       </nav>
 
       <div className="mt-auto pt-4 border-t border-gray-200">

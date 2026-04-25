@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { Rss, AlertCircle } from "lucide-react";
 import { ConfirmEmail } from "../components/layout/ConfirmEmail";
@@ -11,7 +11,6 @@ export function Signup() {
     const [confirmPassword, setConfirmPassword] = useState("")
     const [error, setError] = useState<string | null>(null);
     const [emailSent, setEmailSent] = useState(false);
-    const navigate = useNavigate();
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
