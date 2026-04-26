@@ -1,6 +1,6 @@
-/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "./AuthContext";
+import { supabase } from "../lib/supabase";
 import { fetchAndParseFeed, type FeedItem, type FeedSource } from "../lib/feed-parser";
 // @ts-ignore
 import sampleFeedsData from "../../data/sample-feeds.json";
@@ -71,14 +71,84 @@ export function FeedProvider({ children }: { children: ReactNode }) {
   };
 
   const loadUserFeeds = async () => {
-    setLoadingFeeds(false);
+    try {
+      setLoadingFeeds(true);
+      if (!user) return;
+
+      // Fetch user's categories and feeds
+      const { data: categoriesData, error: catError } = await supabase
+        .from('categories')
+        .select('*');
+        
+      const { data: feedsData, error: feedError } = await supabase
+        .from('feeds')
+        .select('*');
+
+      if (catError) console.error("Error fetching categories:", catError);
+      if (feedError) console.error("Error fetching feeds:", feedError);
+
+      // Reconstruct the category -> feeds relationship
+      const userCategories: Category[] = (categoriesData || []).map(cat => ({
+        name: cat.name,
+        feeds: (feedsData || [])
+          .filter(feed => feed.category_id === cat.id)
+          .map(feed => ({
+            title: feed.title,
+            feedUrl: feed.url,
+            siteUrl: feed.site_url || "",
+            description: feed.description || ""
+          }))
+      }));
+
+      // Fallback empty if new user
+      if (userCategories.length === 0) {
+        setCategories([]);
+        setFeedItems([]);
+        return;
+      }
+      
+      setCategories(userCategories);
+
+      // Fetch dynamic items for all subscribed feeds
+      let allItems: FeedItem[] = [];
+      const fetchPromises = userCategories.flatMap(category =>
+        category.feeds.map(async (feed) => {
+          try {
+            const parsed = await fetchAndParseFeed(feed.feedUrl);
+            const items = parsed.items.map((item: any) => ({
+              id: item.guid || item.id || item.link,
+              title: item.title,
+              link: item.link,
+              pubDate: item.pubDate || item.isoDate,
+              contentSnippet: item.contentSnippet || item.content || item.summary,
+              sourceFeedTitle: parsed.title || feed.title,
+              sourceFeedUrl: feed.feedUrl,
+              isRead: false
+            }));
+            return items;
+          } catch (error) {
+            console.error(`Failed to fetch ${feed.feedUrl}:`, error);
+            return [];
+          }
+        })
+      );
+
+      const results = await Promise.all(fetchPromises);
+      allItems = results.flat().sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+      
+      setFeedItems(allItems);
+    } catch (error) {
+      console.error("Error loading user feeds:", error);
+    } finally {
+      setLoadingFeeds(false);
+    }
   };
 
   const refreshFeeds = async () => {
     if (isGuest) {
       await loadGuestFeeds();
     } else if (user) {
-      // await loadUserFeeds();
+      await loadUserFeeds();
     }
   };
 
@@ -100,7 +170,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         });
       }
       
-      // If guest, persist right away
+      // If guest, persist right away to localStorage
       if (isGuest) {
         localStorage.setItem("frontpage-guestFeeds", JSON.stringify(newArray));
       }
@@ -108,10 +178,45 @@ export function FeedProvider({ children }: { children: ReactNode }) {
       return newArray;
     });
 
-    // 2. Refresh the feedItems so it parses the new feed alongside existing ones
-    // Note: in a real implementation we'd append just the new feed to the items array or refetch
-    // For guest mode, we just re-run loadGuestFeeds or we can manually push the parsed items to state.
-    // To be cleaner, we can just trigger a manual fetch of just this feed:
+    // If authenticated user, persist to Supabase
+    if (user && !isGuest) {
+      try {
+        // 1. Check or Insert category
+        let { data: catData } = await supabase
+          .from('categories')
+          .select('id')
+          .eq('name', categoryName)
+          .eq('user_id', user.id)
+          .single();
+
+        let categoryId = catData?.id;
+
+        if (!categoryId) {
+          const { data: newCat } = await supabase
+            .from('categories')
+            .insert({ name: categoryName, user_id: user.id })
+            .select()
+            .single();
+          categoryId = newCat?.id;
+        }
+
+        // 2. Insert feed
+        if (categoryId) {
+          await supabase.from('feeds').insert({
+            user_id: user.id,
+            category_id: categoryId,
+            url: newFeed.feedUrl,
+            title: newFeed.title,
+            description: newFeed.description,
+            site_url: newFeed.siteUrl
+          });
+        }
+      } catch (dbError) {
+        console.error("Error saving to supabase:", dbError);
+      }
+    }
+
+    // Refresh feed items array to show newly added content
     setLoadingFeeds(true);
     try {
       const parsed = await fetchAndParseFeed(newFeed.feedUrl);
