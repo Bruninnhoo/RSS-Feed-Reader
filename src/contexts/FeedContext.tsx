@@ -27,9 +27,13 @@ export function FeedProvider({ children }: { children: ReactNode }) {
   const [loadingFeeds, setLoadingFeeds] = useState(false);
 
   const loadGuestFeeds = async () => {
-    setLoadingFeeds(true);
     try {
-      const parsedCategories: Category[] = sampleFeedsData.categories;
+      setLoadingFeeds(true);
+      
+      // Load custom guest feeds from localStorage or fallback to defaults
+      const savedGuestFeeds = localStorage.getItem("frontpage-guestFeeds");
+      const parsedCategories: Category[] = savedGuestFeeds ? JSON.parse(savedGuestFeeds) : sampleFeedsData.categories;
+      
       setCategories(parsedCategories);
 
       let allItems: FeedItem[] = [];
@@ -95,6 +99,12 @@ export function FeedProvider({ children }: { children: ReactNode }) {
           feeds: [newFeed]
         });
       }
+      
+      // If guest, persist right away
+      if (isGuest) {
+        localStorage.setItem("frontpage-guestFeeds", JSON.stringify(newArray));
+      }
+      
       return newArray;
     });
 

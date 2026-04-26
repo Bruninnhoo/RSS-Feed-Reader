@@ -18,7 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isGuest, setIsGuest] = useState(false);
+  const [isGuest, setIsGuest] = useState(() => localStorage.getItem("frontpage-isGuest") === "true");
 
   useEffect(() => {
     // Check active session
@@ -41,12 +41,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInAsGuest = () => {
     setIsGuest(true);
+    localStorage.setItem("frontpage-isGuest", "true");
     setUser(null);
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
     setIsGuest(false);
+    localStorage.removeItem("frontpage-isGuest");
   };
 
   return (
