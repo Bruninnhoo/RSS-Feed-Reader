@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 import { fetchAndParseFeed, type FeedItem, type FeedSource } from "../lib/feed-parser";
@@ -14,6 +15,7 @@ type FeedContextType = {
   feedItems: FeedItem[];
   loadingFeeds: boolean;
   refreshFeeds: () => Promise<void>;
+  addFeedToCategory: (newFeed: FeedSource, categoryName: string) => Promise<void>;
 };
 
 const FeedContext = createContext<FeedContextType | undefined>(undefined);
@@ -30,7 +32,6 @@ export function FeedProvider({ children }: { children: ReactNode }) {
       const parsedCategories: Category[] = sampleFeedsData.categories;
       setCategories(parsedCategories);
 
-      // Extract all feed URLs from categories to fetch them
       let allItems: FeedItem[] = [];
       const fetchPromises = parsedCategories.flatMap(category =>
         category.feeds.map(async (feed) => {
@@ -66,7 +67,6 @@ export function FeedProvider({ children }: { children: ReactNode }) {
   };
 
   const loadUserFeeds = async () => {
-    // Phase 4: will implement supabase logic to pull feeds here
     setLoadingFeeds(false);
   };
 
@@ -75,6 +75,55 @@ export function FeedProvider({ children }: { children: ReactNode }) {
       await loadGuestFeeds();
     } else if (user) {
       // await loadUserFeeds();
+    }
+  };
+
+  const addFeedToCategory = async (newFeed: FeedSource, categoryName: string) => {
+    // 1. Update the categories definition
+    setCategories(prev => {
+      const existingCategoryIndex = prev.findIndex(c => c.name.toLowerCase() === categoryName.toLowerCase());
+
+      const newArray = [...prev];
+      if (existingCategoryIndex >= 0) {
+        newArray[existingCategoryIndex] = {
+          ...newArray[existingCategoryIndex],
+          feeds: [...newArray[existingCategoryIndex].feeds, newFeed]
+        };
+      } else {
+        newArray.push({
+          name: categoryName,
+          feeds: [newFeed]
+        });
+      }
+      return newArray;
+    });
+
+    // 2. Refresh the feedItems so it parses the new feed alongside existing ones
+    // Note: in a real implementation we'd append just the new feed to the items array or refetch
+    // For guest mode, we just re-run loadGuestFeeds or we can manually push the parsed items to state.
+    // To be cleaner, we can just trigger a manual fetch of just this feed:
+    setLoadingFeeds(true);
+    try {
+      const parsed = await fetchAndParseFeed(newFeed.feedUrl);
+      const items = parsed.items.map((item: any) => ({
+        id: item.guid || item.id || item.link,
+        title: item.title,
+        link: item.link,
+        pubDate: item.pubDate || item.isoDate,
+        contentSnippet: item.contentSnippet || item.content || item.summary,
+        sourceFeedTitle: parsed.title || newFeed.title,
+        sourceFeedUrl: newFeed.feedUrl,
+        isRead: false
+      }));
+
+      setFeedItems(prev => {
+        const newItems = [...prev, ...items].sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+        return newItems;
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingFeeds(false);
     }
   };
 
@@ -87,7 +136,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
   }, [isGuest, user]);
 
   return (
-    <FeedContext.Provider value={{ categories, feedItems, loadingFeeds, refreshFeeds }}>
+    <FeedContext.Provider value={{ categories, feedItems, loadingFeeds, refreshFeeds, addFeedToCategory }}>
       {children}
     </FeedContext.Provider>
   );

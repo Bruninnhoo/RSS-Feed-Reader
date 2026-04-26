@@ -13,9 +13,9 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-gray-200 pb-4">
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Your Dashboard</h1>
-        <p className="text-gray-500 mt-1 text-sm">Welcome back to your personalized tech feed.</p>
+      <div className="border-b border-[var(--color-border)] pb-4 transition-colors">
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Your Dashboard</h1>
+        <p className="text-[var(--color-text-secondary)] mt-1 text-sm">Welcome back to your personalized tech feed.</p>
       </div>
 
       {loadingFeeds && feedItems.length === 0 ? (
@@ -25,29 +25,29 @@ export function Dashboard() {
       ) : (
         <div className="space-y-4">
             {feedItems.map((item) => (
-            <article key={item.id} className="p-4 border border-gray-100 rounded-xl hover:shadow-md transition-shadow bg-white flex flex-col gap-2">
+            <article key={item.id} className="p-4 border border-[var(--color-border)] rounded-xl hover:shadow-md transition-all bg-[var(--color-surface)] flex flex-col gap-2">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                <span className="text-xs font-semibold text-[var(--color-accent)] bg-[var(--color-accent-subtle)] px-2 py-1 rounded transition-colors">
                     {item.sourceFeedTitle}
                 </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-[var(--color-text-tertiary)]">
                     {item.pubDate ? formatDistanceToNow(new Date(item.pubDate), { addSuffix: true }) : 'Unknown date'}
                 </span>
                 </div>
                 <a href={item.link} target="_blank" rel="noopener noreferrer" className="block group">
-                    <h2 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 group-hover:underline line-clamp-2">
+                    <h2 className="text-lg font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] group-hover:underline line-clamp-2 transition-colors">
                         {item.title}
                     </h2>
                 </a>
-                <p className="text-gray-600 text-sm line-clamp-3 mt-1">
+                <p className="text-[var(--color-text-secondary)] text-sm line-clamp-3 mt-1 transition-colors">
                     {stripHtml(item.contentSnippet)}
                 </p>
             </article>
             ))}
             {feedItems.length === 0 && !loadingFeeds && (
-                <div className="text-center p-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                    <h3 className="text-lg font-medium text-gray-900">No items found</h3>
-                    <p className="text-gray-500 mt-1">Add some feeds to see content here.</p>
+                <div className="text-center p-12 bg-[var(--color-bg-secondary)] rounded-lg border border-dashed border-[var(--color-border)] transition-colors">
+                    <h3 className="text-lg font-medium text-[var(--color-text-primary)]">No items found</h3>
+                    <p className="text-[var(--color-text-secondary)] mt-1">Add some feeds to see content here.</p>
                 </div>
             )}
         </div>
